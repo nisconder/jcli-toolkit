@@ -73,15 +73,34 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: current
 
     - name: Build with Gradle
-      run: ./gradlew clean build -x test
+      shell: pwsh
+      run: |
+        if (Test-Path './gradlew') {
+          if ($env:RUNNER_OS -ne 'Windows') {
+            chmod +x gradlew
+          }
+          ./gradlew clean build -x test
+        } else {
+          gradle clean build -x test
+        }
 
     - name: Run tests
-      run: ./gradlew test
+      shell: pwsh
+      run: |
+        if (Test-Path './gradlew') {
+          if ($env:RUNNER_OS -ne 'Windows') {
+            chmod +x gradlew
+          }
+          ./gradlew test
+        } else {
+          gradle test
+        }
 
   lint:
     runs-on: ubuntu-latest
