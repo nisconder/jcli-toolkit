@@ -1,0 +1,5 @@
+rootProject.name = 'jcli-toolkit'
+include 'core'
+include 'file-ops'
+include 'codegen'
+include 'cli-entry'
