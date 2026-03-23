@@ -78,31 +78,13 @@ jobs:
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
-        gradle-version: current
+        gradle-version: '8.10.2'
 
     - name: Build with Gradle
-      shell: pwsh
-      run: |
-        if (Test-Path './gradlew') {
-          if ($env:RUNNER_OS -ne 'Windows') {
-            chmod +x gradlew
-          }
-          ./gradlew clean build -x test
-        } else {
-          gradle clean build -x test
-        }
+      run: gradle clean build -x test --no-daemon --stacktrace
 
     - name: Run tests
-      shell: pwsh
-      run: |
-        if (Test-Path './gradlew') {
-          if ($env:RUNNER_OS -ne 'Windows') {
-            chmod +x gradlew
-          }
-          ./gradlew test
-        } else {
-          gradle test
-        }
+      run: gradle test --no-daemon --stacktrace
 
   lint:
     runs-on: ubuntu-latest

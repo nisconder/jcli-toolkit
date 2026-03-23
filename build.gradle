@@ -32,3 +32,23 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 }
+
+project(':file-ops') {
+    dependencies {
+        implementation project(':core')
+    }
+}
+
+project(':codegen') {
+    dependencies {
+        implementation project(':core')
+    }
+}
+
+project(':cli-entry') {
+    dependencies {
+        implementation project(':core')
+        implementation project(':file-ops')
+        implementation project(':codegen')
+    }
+}
