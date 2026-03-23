@@ -13,9 +13,11 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
     
     dependencies {
         testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
@@ -26,7 +28,7 @@ subprojects {
         useJUnitPlatform()
     }
     
-    tasks.withType(JavaCompile) {
+    tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
 }
