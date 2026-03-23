@@ -1,0 +1,25 @@
+# IDE files
+.classpath
+.project
+.settings/
+.vscode/
+**/.classpath
+**/.project
+**/.settings/
+
+# Build tools and outputs
+.gradle/
+build/
+target/
+bin/
+**/build/
+**/target/
+**/bin/
+
+# Java compiled artifacts
+*.class
+
+# Logs and OS temp files
+*.log
+.DS_Store
+Thumbs.db
