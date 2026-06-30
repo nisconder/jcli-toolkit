@@ -2,6 +2,11 @@ plugins {
     id 'java'
     id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
     id 'jacoco'
+    id 'org.graalvm.buildtools.native' version '0.10.3' apply false
+}
+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 allprojects {
@@ -34,6 +39,28 @@ subprojects {
         useJUnitPlatform()
     }
 
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+            xml.outputLocation = layout.buildDirectory.file('reports/jacoco/test/jacoco.xml')
+        }
+    }
+
+    jacocoTestCoverageVerification {
+        violationRules {
+            rule {
+                limit {
+                    counter = 'LINE'
+                    minimum = 0.70
+                }
+            }
+        }
+    }
+
+    check.dependsOn jacocoTestCoverageVerification
+
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
@@ -56,6 +83,7 @@ project(':codegen') {
 project(':cli-entry') {
     apply plugin: 'com.github.johnrengelman.shadow'
     apply plugin: 'application'
+    apply plugin: 'org.graalvm.buildtools.native'
 
     mainClassName = 'com.jcli.cli.Main'
 
@@ -81,6 +109,17 @@ project(':cli-entry') {
         mergeServiceFiles()
         manifest {
             attributes 'Main-Class': 'com.jcli.cli.Main'
+        }
+    }
+
+    graalvmNative {
+        binaries {
+            main {
+                imageName = 'jcli'
+                mainClass = 'com.jcli.cli.Main'
+                buildArgs.add('-H:ReflectionConfigurationFiles=' + project.projectDir.toString() + '/src/main/resources/META-INF/native-image/reflect-config.json')
+                buildArgs.add('-H:ResourceConfigurationFiles=' + project.projectDir.toString() + '/src/main/resources/META-INF/native-image/resource-config.json')
+            }
         }
     }
 }

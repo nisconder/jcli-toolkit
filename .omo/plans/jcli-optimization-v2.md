@@ -457,7 +457,7 @@ Wave 5: CI polish (1 todo)
     - No tests call System.exit() (grep for System.exit in test files = 0)
   Commit: N (batched with todo 13)
 
-- [ ] 13. Configure JaCoCo in Gradle and verify ≥70% coverage
+- [x] 13. Configure JaCoCo in Gradle and verify ≥70% coverage
   What to do / Must NOT do:
     - In `build.gradle`: add `id 'jacoco'` plugin at root
     - Configure JaCoCo version to 0.8.12
@@ -484,7 +484,7 @@ Wave 5: CI polish (1 todo)
 
 ### Wave 4 — GraalVM Native Image
 
-- [ ] 14. Configure GraalVM Native Image support
+- [x] 14. Configure GraalVM Native Image support
   What to do / Must NOT do:
     - Add `org.graalvm.buildtools:native-gradle-plugin:0.10.3` to `build.gradle`
     - Add `id 'org.graalvm.buildtools.native'` plugin

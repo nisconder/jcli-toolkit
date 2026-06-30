@@ -43,6 +43,17 @@ jcli gen class --name User --package com.demo --template pojo
 - JDK 17+
 - Gradle wrapper (auto-downloads)
 
+## 原生二进制
+
+使用 GraalVM Native Image 可将 JCLI 编译为原生可执行文件，实现毫秒级启动：
+
+```bash
+./gradlew :cli-entry:nativeCompile
+./cli-entry/build/native/nativeCompile/jcli --help
+```
+
+> 注意：需要安装 GraalVM JDK 17+。原生编译在 macOS/Linux 上支持较好，Windows 需要在 x64 环境下使用 GraalVM CE。
+
 ## 贡献与许可证
 
 - 贡献指南：[CONTRIBUTING.md](CONTRIBUTING.md)

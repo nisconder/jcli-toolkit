@@ -1,0 +1,5 @@
+{
+  "resources": [
+    {"pattern":"\\QMETA-INF/services/com.jcli.core.CliCommand\\E"}
+  ]
+}
