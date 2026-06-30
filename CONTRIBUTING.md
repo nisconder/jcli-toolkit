@@ -7,7 +7,7 @@
 ### 前置要求
 
 - Java 17+
-- Maven 3.6+ 或 Gradle 8+
+- Gradle Wrapper (自动下载)
 - Git
 
 ### 克隆仓库
@@ -20,10 +20,6 @@ cd jcli-toolkit
 ### 构建
 
 ```bash
-# Maven
-mvn clean install
-
-# Gradle
 ./gradlew clean build
 ```
 
@@ -44,49 +40,47 @@ mvn clean install
 package com.jcli.example;
 
 import com.jcli.core.CliCommand;
-import com.jcli.core.CommandLine;
-import com.jcli.core.CommandLineParser;
 import com.jcli.core.Logger;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
-public class ExampleCommand implements CliCommand {
-    @Override
-    public String name() {
-        return "example";
-    }
+@Command(name = "example", description = "Example command")
+public class ExampleCommand implements CliCommand, Runnable {
+    @Option(names = {"-v", "--verbose"}, description = "Verbose output")
+    boolean verbose;
 
     @Override
-    public String description() {
-        return "Example command";
-    }
+    public String name() { return "example"; }
+
+    @Override
+    public String description() { return "Example command"; }
 
     @Override
     public int execute(String[] args) throws Exception {
-        CommandLineParser parser = new CommandLineParser("jcli example")
-                .description("Example command description")
-                .addOption(CommandLineParser.Option.of("v", "verbose", "Verbose output"));
+        return new picocli.CommandLine(this).execute(args);
+    }
 
-        CommandLine cmdLine = parser.parse(args);
-
-        if (cmdLine.shouldShowHelp()) {
-            parser.printHelp();
-            return 0;
-        }
-
-        // 命令逻辑
-        return 0;
+    @Override
+    public void run() {
+        // command logic
     }
 }
 ```
 
 ### 2. 注册命令
 
-在 `cli-entry/src/main/java/com/jcli/cli/Main.java` 中注册：
+在 `cli-entry/src/main/java/com/jcli/cli/JcliCli.java` 的 `@Command(subcommands = {...})` 注解中添加新命令类：
 
 ```java
-static {
-    // 现有命令...
-
-    registerCommand("example", new ExampleCommand(), "Example command");
+@Command(
+    name = "jcli",
+    subcommands = {
+        // 现有命令...
+        ExampleCommand.class
+    }
+)
+public class JcliCli implements Runnable {
+    // ...
 }
 ```
 
@@ -114,7 +108,7 @@ class ExampleCommandTest {
 
 ### 插件结构
 
-1. 创建独立的 Maven/Gradle 项目
+1. 创建独立的 Gradle 项目
 2. 实现 `CliCommand` 接口
 3. 创建服务注册文件
 
@@ -130,10 +124,10 @@ com.example.myplugin.MyCommand
 
 ```bash
 # 构建插件
-mvn clean package
+./gradlew shadowJar
 
 # 复制到插件目录
-cp target/my-plugin-1.0.0.jar ~/.jcli/plugins/
+cp build/libs/my-plugin-*.jar ~/.jcli/plugins/
 ```
 
 ## 提交 Pull Request
@@ -171,20 +165,12 @@ refactor: improve command parsing logic
 ### 运行测试
 
 ```bash
-# Maven
-mvn test
-
-# Gradle
 ./gradlew test
 ```
 
 ### 测试覆盖率
 
 ```bash
-# Maven
-mvn jacoco:report
-
-# Gradle
 ./gradlew jacocoTestReport
 ```
 

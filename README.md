@@ -12,8 +12,8 @@
 ```bash
 git clone https://github.com/nisconder/jcli-toolkit.git
 cd jcli-toolkit
-mvn clean package
-java -jar cli-entry/target/cli-entry-1.0.0.jar --help
+./gradlew shadowJar
+java -jar cli-entry/build/libs/cli-entry-*.jar --help
 ```
 
 ## 常用命令
@@ -41,10 +41,7 @@ jcli gen class --name User --package com.demo --template pojo
 ## 环境要求
 
 - JDK 17+
-- Maven 3.8+（推荐）
-- Gradle 8+（可选）
-
-说明：当前仓库未提交 Gradle Wrapper（gradlew/gradlew.bat），若无 Gradle 请直接使用 Maven。
+- Gradle wrapper (auto-downloads)
 
 ## 贡献与许可证
 

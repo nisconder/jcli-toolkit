@@ -11,10 +11,8 @@
 .gradle/
 build/
 target/
-bin/
 **/build/
 **/target/
-**/bin/
 
 # Java compiled artifacts
 *.class
