@@ -317,7 +317,7 @@ Wave 5: CI polish (1 todo)
 
 ### Wave 2 — Plugin system + TemplateCommand
 
-- [ ] 8. Fix plugin loading and implement TemplateCommand add/remove
+- [x] 8. Fix plugin loading and implement TemplateCommand add/remove
   What to do / Must NOT do:
     - Create `META-INF/services/com.jcli.core.CliCommand` file (empty, for ServiceLoader discovery)
     - `Main.java` (now JcliCli.java) `loadPlugins()`:
@@ -352,7 +352,7 @@ Wave 5: CI polish (1 todo)
   Commit: Y | `feat: fix plugin loading with proper logging and implement template add/remove`
 
 ### Wave 3 — Test coverage (JUnit 5 + JaCoCo ≥70%)
-- [ ] 9. Write core module tests
+- [x] 9. Write core module tests
 
   What to do / Must NOT do:
     - `core/src/test/java/com/jcli/core/LoggerTest.java`:
@@ -377,7 +377,7 @@ Wave 5: CI polish (1 todo)
     - Happy: LogLevel.INFO.getLevel() = 0, WARN = 1, ERROR = 2
   Commit: N (batched with todo 13)
 
-- [ ] 10. Write file-ops module tests
+- [x] 10. Write file-ops module tests
   What to do / Must NOT do:
     - Test files in `file-ops/src/test/java/com/jcli/fileops/`:
     - `FileFindCommandTest.java`:
@@ -413,7 +413,7 @@ Wave 5: CI polish (1 todo)
   QA scenarios: (see individual test descriptions above)
   Commit: N (batched with todo 13)
 
-- [ ] 11. Write codegen module tests
+- [x] 11. Write codegen module tests
   What to do / Must NOT do:
     - Test files in `codegen/src/test/java/com/jcli/codegen/`:
     - `GenClassCommandTest.java`:
@@ -439,7 +439,7 @@ Wave 5: CI polish (1 todo)
     - Generated Java files are syntactically valid (can be parsed)
   Commit: N (batched with todo 13)
 
-- [ ] 12. Write cli-entry module tests
+- [x] 12. Write cli-entry module tests
   What to do / Must NOT do:
     - `cli-entry/src/test/java/com/jcli/cli/MainTest.java` — test against JcliCli root command:
     - Test `--help` and `--version` output
