@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Expose internal representation: intentional in command classes -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <!-- Possible null from return value: false positives where non-null is guaranteed by usage -->
+    <Match>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
+    </Match>
+    <!-- Default encoding: intentional for platform-dependent file operations -->
+    <Match>
+        <Bug pattern="DM_DEFAULT_ENCODING" />
+    </Match>
+    <!-- Return value ignored: intentional in specific call sites -->
+    <Match>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED" />
+    </Match>
+</FindBugsFilter>
+

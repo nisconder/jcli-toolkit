@@ -519,7 +519,7 @@ Wave 5: CI polish (1 todo)
 
 ### Wave 5 — CI/CD polish (Checkstyle, SpotBugs, actions)
 
-- [ ] 15. Add Checkstyle and SpotBugs quality gates; finalize CI
+- [x] 15. Add Checkstyle and SpotBugs quality gates; finalize CI
   What to do / Must NOT do:
     - In `build.gradle`:
       - Add `id 'checkstyle'` plugin
