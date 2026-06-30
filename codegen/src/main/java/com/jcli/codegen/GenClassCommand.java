@@ -10,9 +10,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 @Command(name = "class", description = "Generate Java class file", mixinStandardHelpOptions = true)
-public class GenClassCommand implements CliCommand {
+public class GenClassCommand implements CliCommand, Callable<Integer> {
     @Option(names = {"-n", "--name"}, description = "Class name", required = true)
     private String className;
 

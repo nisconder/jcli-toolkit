@@ -13,9 +13,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Scanner;
+import java.util.concurrent.Callable;
 
 @Command(name = "sync", description = "Sync directories", mixinStandardHelpOptions = true)
-public class FileSyncCommand implements CliCommand {
+public class FileSyncCommand implements CliCommand, Callable<Integer> {
     private static final Scanner INPUT_SCANNER = new Scanner(System.in);
 
     @Option(names = {"-s", "--source"}, description = "Source directory", required = true)

@@ -14,9 +14,10 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 @Command(name = "diff", description = "Compare directories", mixinStandardHelpOptions = true)
-public class FileDiffCommand implements CliCommand {
+public class FileDiffCommand implements CliCommand, Callable<Integer> {
     @Option(names = {"--dir1"}, description = "First directory", required = true)
     private String dir1Str;
 

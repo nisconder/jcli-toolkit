@@ -9,9 +9,10 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 @Command(name = "find", description = "Find files in directory", mixinStandardHelpOptions = true)
-public class FileFindCommand implements CliCommand {
+public class FileFindCommand implements CliCommand, Callable<Integer> {
     @Option(names = {"-d", "--dir"}, description = "Directory to search", defaultValue = ".")
     private String dir;
 

@@ -5,8 +5,10 @@ import com.jcli.core.Logger;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+import java.util.concurrent.Callable;
+
 @Command(name = "snippet", description = "Generate code snippets", mixinStandardHelpOptions = true)
-public class GenSnippetCommand implements CliCommand {
+public class GenSnippetCommand implements CliCommand, Callable<Integer> {
     @Option(names = {"-t", "--type"}, description = "Snippet type: getter-setter, equals-hashcode, builder, logger, try-with-resources", required = true)
     private String type;
 

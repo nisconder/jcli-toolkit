@@ -14,12 +14,13 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Callable;
 import java.util.regex.PatternSyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Command(name = "rename", description = "Batch rename files", mixinStandardHelpOptions = true)
-public class FileRenameCommand implements CliCommand {
+public class FileRenameCommand implements CliCommand, Callable<Integer> {
     private static final Scanner INPUT_SCANNER = new Scanner(System.in);
 
     @Option(names = {"-d", "--dir"}, description = "Directory to process", defaultValue = ".")

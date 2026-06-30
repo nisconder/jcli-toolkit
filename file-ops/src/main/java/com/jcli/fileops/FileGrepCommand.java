@@ -12,9 +12,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.concurrent.Callable;
 
 @Command(name = "grep", description = "Search file contents", mixinStandardHelpOptions = true)
-public class FileGrepCommand implements CliCommand {
+public class FileGrepCommand implements CliCommand, Callable<Integer> {
     @Option(names = {"-p", "--pattern"}, description = "Pattern to search (regex)", required = true)
     private String pattern;
 

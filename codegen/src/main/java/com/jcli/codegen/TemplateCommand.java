@@ -5,10 +5,18 @@ import com.jcli.core.Logger;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 @Command(name = "template", description = "Template management", mixinStandardHelpOptions = true)
-public class TemplateCommand implements CliCommand {
+public class TemplateCommand implements CliCommand, Callable<Integer> {
 
     @Parameters(paramLabel = "ACTION", description = "Action: list, add, remove", arity = "0..1")
     private String action;
@@ -81,15 +89,97 @@ public class TemplateCommand implements CliCommand {
         System.out.println("  maven-library  - Maven library project");
         System.out.println("  gradle-library - Gradle library project");
         System.out.println("  cli-app        - CLI application");
+
+        // List user-installed templates from ~/.jcli/templates/
+        Path templatesDir = Paths.get(System.getProperty("user.home"), ".jcli", "templates");
+        if (Files.isDirectory(templatesDir)) {
+            List<String> userTemplates = new java.util.ArrayList<>();
+            try (Stream<Path> stream = Files.list(templatesDir)) {
+                stream.forEach(path -> userTemplates.add(path.getFileName().toString()));
+            } catch (IOException e) {
+                Logger.warn("Failed to list user templates: " + e.getMessage());
+                return;
+            }
+            if (!userTemplates.isEmpty()) {
+                userTemplates.sort(String::compareTo);
+                System.out.println();
+                System.out.println("User Templates:");
+                for (String name : userTemplates) {
+                    System.out.println("  " + name);
+                }
+            }
+        }
     }
 
     private void addTemplate(String path) {
-        Logger.info("Adding template from: " + path);
-        Logger.info("Template added successfully (stub implementation)");
+        try {
+            Path source = Paths.get(path);
+            if (!Files.exists(source)) {
+                Logger.error("Template path not found: " + path);
+                return;
+            }
+
+            Path templatesDir = Paths.get(System.getProperty("user.home"), ".jcli", "templates");
+            Files.createDirectories(templatesDir);
+
+            String templateName = source.getFileName().toString();
+            Path target = templatesDir.resolve(templateName);
+
+            if (Files.exists(target)) {
+                Logger.error("Template already exists: " + templateName);
+                return;
+            }
+
+            if (Files.isDirectory(source)) {
+                // Copy directory recursively
+                try (Stream<Path> walk = Files.walk(source)) {
+                    walk.forEach(src -> {
+                        try {
+                            Path dest = target.resolve(source.relativize(src));
+                            Files.copy(src, dest, StandardCopyOption.COPY_ATTRIBUTES);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+            } else {
+                Files.copy(source, target);
+            }
+
+            Logger.info("Template added: " + templateName);
+        } catch (Exception e) {
+            Logger.error("Failed to add template: " + e.getMessage());
+        }
     }
 
     private void removeTemplate(String name) {
-        Logger.info("Removing template: " + name);
-        Logger.info("Template removed successfully (stub implementation)");
+        try {
+            Path templatesDir = Paths.get(System.getProperty("user.home"), ".jcli", "templates");
+            Path target = templatesDir.resolve(name);
+
+            if (!Files.exists(target)) {
+                Logger.error("Template not found: " + name);
+                return;
+            }
+
+            if (Files.isDirectory(target)) {
+                try (Stream<Path> walk = Files.walk(target)) {
+                    walk.sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                }
+            } else {
+                Files.deleteIfExists(target);
+            }
+
+            Logger.info("Template removed: " + name);
+        } catch (Exception e) {
+            Logger.error("Failed to remove template: " + e.getMessage());
+        }
     }
 }

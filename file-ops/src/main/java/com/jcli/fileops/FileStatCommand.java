@@ -10,9 +10,10 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.concurrent.Callable;
 
-@Command(name = "stat", description = "Show statistics of directory", mixinStandardHelpOptions = true)
-public class FileStatCommand implements CliCommand {
+@Command(name = "stat", description = "Show file statistics", mixinStandardHelpOptions = true)
+public class FileStatCommand implements CliCommand, Callable<Integer> {
     @Option(names = {"-d", "--dir"}, description = "Directory to analyze", defaultValue = ".")
     private String dir;
 

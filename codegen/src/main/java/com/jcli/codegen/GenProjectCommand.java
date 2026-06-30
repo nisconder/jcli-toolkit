@@ -9,9 +9,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.Callable;
 
 @Command(name = "project", description = "Generate project structure", mixinStandardHelpOptions = true)
-public class GenProjectCommand implements CliCommand {
+public class GenProjectCommand implements CliCommand, Callable<Integer> {
     @Option(names = {"-n", "--name"}, description = "Project name", required = true)
     private String projectName;
 
