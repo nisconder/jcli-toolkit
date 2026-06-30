@@ -187,10 +187,13 @@ public class FileRenameCommand implements CliCommand, Callable<Integer> {
             sourcePaths.add(op.oldPath());
         }
 
+        Path absStartDir = startDir.toAbsolutePath().normalize();
         for (RenameOp op : operations) {
             Path normalizedTarget = op.newPath().normalize();
 
-            if (!normalizedTarget.getParent().equals(startDir.normalize())) {
+            Path parent = normalizedTarget.getParent();
+            // null parent means a single-component filename (e.g. "build.groovy") — implicitly in current dir
+            if (parent != null && !parent.equals(absStartDir)) {
                 Logger.error("Unsafe target path outside working directory: " + normalizedTarget);
                 return 1;
             }

@@ -150,7 +150,7 @@ public class FileSyncCommand implements CliCommand, Callable<Integer> {
         List<SyncOperation> operations = new ArrayList<>();
         Set<Path> targetFiles = new HashSet<>();
 
-        if (!Files.exists(target)) {
+        if (!dryRun && !Files.exists(target)) {
             Files.createDirectories(target);
         }
 
@@ -159,12 +159,14 @@ public class FileSyncCommand implements CliCommand, Callable<Integer> {
             public FileVisitResult preVisitDirectory(Path d, BasicFileAttributes attrs) {
                 Path relative = source.relativize(d);
                 Path targetDir = target.resolve(relative);
-                try {
-                    if (!Files.exists(targetDir)) {
-                        Files.createDirectories(targetDir);
+                if (!dryRun) {
+                    try {
+                        if (!Files.exists(targetDir)) {
+                            Files.createDirectories(targetDir);
+                        }
+                    } catch (IOException e) {
+                        Logger.warn("Failed to create directory: " + targetDir);
                     }
-                } catch (IOException e) {
-                    Logger.warn("Failed to create directory: " + targetDir);
                 }
                 return FileVisitResult.CONTINUE;
             }
