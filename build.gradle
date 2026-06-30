@@ -1,11 +1,14 @@
 plugins {
     id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'jacoco'
 }
 
 allprojects {
     group = 'com.jcli'
     version = '1.0.0'
-    
+
     repositories {
         mavenCentral()
     }
@@ -18,16 +21,16 @@ subprojects {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    
+
     dependencies {
         testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
         testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
     }
-    
+
     test {
         useJUnitPlatform()
     }
-    
+
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
@@ -36,19 +39,45 @@ subprojects {
 project(':file-ops') {
     dependencies {
         implementation project(':core')
+        testImplementation project(':core')
     }
 }
 
 project(':codegen') {
     dependencies {
         implementation project(':core')
+        testImplementation project(':core')
     }
 }
 
 project(':cli-entry') {
+    apply plugin: 'com.github.johnrengelman.shadow'
+    apply plugin: 'application'
+
+    mainClassName = 'com.jcli.cli.Main'
+
     dependencies {
         implementation project(':core')
         implementation project(':file-ops')
         implementation project(':codegen')
+        testImplementation project(':core')
+        testImplementation project(':file-ops')
+        testImplementation project(':codegen')
+    }
+
+    jar {
+        manifest {
+            attributes 'Main-Class': 'com.jcli.cli.Main'
+        }
+    }
+
+    shadowJar {
+        archiveBaseName.set('cli-entry')
+        archiveClassifier.set('all')
+        archiveVersion.set('')
+        mergeServiceFiles()
+        manifest {
+            attributes 'Main-Class': 'com.jcli.cli.Main'
+        }
     }
 }

@@ -77,7 +77,7 @@ public class Logger {
         } else {
             output = message;
         }
-        System.out.println(output);
+        System.err.println(output);
     }
 
     public static void printProgress(int current, int total, String message) {
