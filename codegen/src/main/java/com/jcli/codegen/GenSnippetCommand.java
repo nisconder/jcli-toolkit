@@ -1,11 +1,21 @@
 package com.jcli.codegen;
 
 import com.jcli.core.CliCommand;
-import com.jcli.core.CommandLine;
-import com.jcli.core.CommandLineParser;
 import com.jcli.core.Logger;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
+@Command(name = "snippet", description = "Generate code snippets", mixinStandardHelpOptions = true)
 public class GenSnippetCommand implements CliCommand {
+    @Option(names = {"-t", "--type"}, description = "Snippet type: getter-setter, equals-hashcode, builder, logger, try-with-resources", required = true)
+    private String type;
+
+    @Option(names = {"-f", "--fields"}, description = "Field definitions (name:type,...)")
+    private String fieldsStr;
+
+    @Option(names = {"-c", "--clipboard"}, description = "Copy to clipboard (if supported)")
+    private boolean clipboard;
+
     @Override
     public String name() {
         return "snippet";
@@ -18,35 +28,18 @@ public class GenSnippetCommand implements CliCommand {
 
     @Override
     public int execute(String[] args) throws Exception {
-        CommandLineParser parser = new CommandLineParser("jcli gen snippet")
-                .description("Generate code snippets")
-                .addOption(CommandLineParser.Option.ofValue("t", "type", "Snippet type: getter-setter, equals-hashcode, builder, logger, try-with-resources"))
-                .addOption(CommandLineParser.Option.ofValue("f", "fields", "Field definitions (name:type,...)"))
-                .addOption(CommandLineParser.Option.of("c", "clipboard", "Copy to clipboard (if supported)"));
+        return new picocli.CommandLine(this).execute(args);
+    }
 
-        CommandLine cmdLine = parser.parse(args);
-
-        if (cmdLine.shouldShowHelp()) {
-            parser.printHelp();
-            return 0;
-        }
-
-        String type = cmdLine.getOptionValue(parser.getLongOption("type"));
-        if (type == null) {
-            Logger.error("Snippet type is required");
-            return 1;
-        }
-
-        String fieldsStr = cmdLine.getOptionValue(parser.getLongOption("fields"));
-        boolean clipboard = cmdLine.hasOption(parser.getShortOption("c"));
-
+    @Override
+    public Integer call() {
         String snippet = generateSnippet(type, fieldsStr);
 
         if (clipboard) {
             try {
                 java.awt.Toolkit.getDefaultToolkit()
-                    .getSystemClipboard()
-                    .setContents(new java.awt.datatransfer.StringSelection(snippet), null);
+                        .getSystemClipboard()
+                        .setContents(new java.awt.datatransfer.StringSelection(snippet), null);
                 Logger.info("Snippet copied to clipboard");
             } catch (Exception e) {
                 Logger.warn("Could not copy to clipboard: " + e.getMessage());
@@ -83,24 +76,24 @@ public class GenSnippetCommand implements CliCommand {
 
         StringBuilder sb = new StringBuilder();
         String[] fieldDefs = fieldsStr.split(",");
-        
+
         for (String fieldDef : fieldDefs) {
             String[] parts = fieldDef.trim().split(":");
             if (parts.length == 2) {
                 String name = parts[0].trim();
                 String type = parts[1].trim();
                 String capitalizedName = capitalize(name);
-                
+
                 sb.append("public ").append(type).append(" get").append(capitalizedName).append("() {\n");
                 sb.append("    return ").append(name).append(";\n");
                 sb.append("}\n\n");
-                
+
                 sb.append("public void set").append(capitalizedName).append("(").append(type).append(" ").append(name).append(") {\n");
                 sb.append("    this.").append(name).append(" = ").append(name).append(";\n");
                 sb.append("}\n\n");
             }
         }
-        
+
         return sb.toString();
     }
 

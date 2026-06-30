@@ -1,9 +1,9 @@
 package com.jcli.fileops;
 
 import com.jcli.core.CliCommand;
-import com.jcli.core.CommandLine;
-import com.jcli.core.CommandLineParser;
 import com.jcli.core.Logger;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -14,8 +14,30 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Scanner;
 
+@Command(name = "sync", description = "Sync directories", mixinStandardHelpOptions = true)
 public class FileSyncCommand implements CliCommand {
     private static final Scanner INPUT_SCANNER = new Scanner(System.in);
+
+    @Option(names = {"-s", "--source"}, description = "Source directory", required = true)
+    private String sourceDir;
+
+    @Option(names = {"-t", "--target"}, description = "Target directory", required = true)
+    private String targetDir;
+
+    @Option(names = {"-x", "--exclude"}, description = "Exclude pattern")
+    private String exclude;
+
+    @Option(names = {"-d", "--delete"}, description = "Delete extra files in target")
+    private boolean deleteExtra;
+
+    @Option(names = {"-y", "--dry-run"}, description = "Preview changes without executing")
+    private boolean dryRun;
+
+    @Option(names = {"-c", "--confirm"}, description = "Confirm before syncing")
+    private boolean confirm;
+
+    @Option(names = {"-v", "--verbose"}, description = "Verbose output")
+    private boolean verbose;
 
     @Override
     public String name() {
@@ -29,36 +51,11 @@ public class FileSyncCommand implements CliCommand {
 
     @Override
     public int execute(String[] args) throws Exception {
-        CommandLineParser parser = new CommandLineParser("jcli file sync")
-                .description("Sync source directory to target directory")
-                .addOption(CommandLineParser.Option.ofValue("s", "source", "Source directory"))
-                .addOption(CommandLineParser.Option.ofValue("t", "target", "Target directory"))
-                .addOption(CommandLineParser.Option.ofValue("x", "exclude", "Exclude pattern"))
-                .addOption(CommandLineParser.Option.of("d", "delete", "Delete extra files in target"))
-                .addOption(CommandLineParser.Option.of("y", "dry-run", "Preview changes without executing"))
-                .addOption(CommandLineParser.Option.of("c", "confirm", "Confirm before syncing"))
-                .addOption(CommandLineParser.Option.of("v", "verbose", "Verbose output"));
+        return new picocli.CommandLine(this).execute(args);
+    }
 
-        CommandLine cmdLine = parser.parse(args);
-
-        if (cmdLine.shouldShowHelp()) {
-            parser.printHelp();
-            return 0;
-        }
-
-        String sourceDir = cmdLine.getOptionValue(parser.getLongOption("source"));
-        String targetDir = cmdLine.getOptionValue(parser.getLongOption("target"));
-        String exclude = cmdLine.getOptionValue(parser.getLongOption("exclude"));
-        boolean deleteExtra = cmdLine.hasOption(parser.getShortOption("d"));
-        boolean dryRun = cmdLine.hasOption(parser.getShortOption("y"));
-        boolean confirm = cmdLine.hasOption(parser.getShortOption("c"));
-        boolean verbose = cmdLine.hasOption(parser.getShortOption("v"));
-
-        if (sourceDir == null || targetDir == null) {
-            Logger.error("Source and target directories are required");
-            return 1;
-        }
-
+    @Override
+    public Integer call() {
         if (verbose) {
             Logger.setVerbose(true);
         }
@@ -71,7 +68,13 @@ public class FileSyncCommand implements CliCommand {
             return 1;
         }
 
-        List<SyncOperation> operations = calculateOperations(source, target, exclude, deleteExtra);
+        List<SyncOperation> operations;
+        try {
+            operations = calculateOperations(source, target, exclude, deleteExtra);
+        } catch (IOException e) {
+            Logger.error("Failed to calculate operations: " + e.getMessage());
+            return 1;
+        }
 
         if (operations.isEmpty()) {
             Logger.info("No changes needed");
@@ -141,7 +144,7 @@ public class FileSyncCommand implements CliCommand {
         return 0;
     }
 
-    private List<SyncOperation> calculateOperations(Path source, Path target, String exclude, boolean deleteExtra) 
+    private List<SyncOperation> calculateOperations(Path source, Path target, String exclude, boolean deleteExtra)
             throws IOException {
         List<SyncOperation> operations = new ArrayList<>();
         Set<Path> targetFiles = new HashSet<>();
@@ -152,8 +155,8 @@ public class FileSyncCommand implements CliCommand {
 
         Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                Path relative = source.relativize(dir);
+            public FileVisitResult preVisitDirectory(Path d, BasicFileAttributes attrs) {
+                Path relative = source.relativize(d);
                 Path targetDir = target.resolve(relative);
                 try {
                     if (!Files.exists(targetDir)) {
@@ -214,10 +217,10 @@ public class FileSyncCommand implements CliCommand {
                 }
 
                 @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
-                    Path relative = target.relativize(dir);
+                public FileVisitResult postVisitDirectory(Path d, IOException exc) {
+                    Path relative = target.relativize(d);
                     if (relative.getNameCount() > 0 && !targetFiles.contains(relative)) {
-                        operations.add(new SyncOperation(null, dir, OperationType.DELETE));
+                        operations.add(new SyncOperation(null, d, OperationType.DELETE));
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -232,6 +235,8 @@ public class FileSyncCommand implements CliCommand {
         return operations;
     }
 
-    record SyncOperation(Path source, Path target, OperationType type) {}
-    enum OperationType { COPY, DELETE }
+    record SyncOperation(Path source, Path target, OperationType type) {
+    }
+
+    enum OperationType {COPY, DELETE}
 }

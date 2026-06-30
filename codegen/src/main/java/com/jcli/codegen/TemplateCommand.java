@@ -2,8 +2,20 @@ package com.jcli.codegen;
 
 import com.jcli.core.CliCommand;
 import com.jcli.core.Logger;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
+import java.util.List;
+
+@Command(name = "template", description = "Template management", mixinStandardHelpOptions = true)
 public class TemplateCommand implements CliCommand {
+
+    @Parameters(paramLabel = "ACTION", description = "Action: list, add, remove", arity = "0..1")
+    private String action;
+
+    @Parameters(paramLabel = "ARG", description = "Template path (for add) or name (for remove)", arity = "0..1")
+    private String arg;
+
     @Override
     public String name() {
         return "template";
@@ -16,7 +28,12 @@ public class TemplateCommand implements CliCommand {
 
     @Override
     public int execute(String[] args) throws Exception {
-        if (args.length == 0 || args[0].equals("--help") || args[0].equals("-h")) {
+        return new picocli.CommandLine(this).execute(args);
+    }
+
+    @Override
+    public Integer call() {
+        if (action == null) {
             System.out.println("Template Management Commands:");
             System.out.println("  jcli template list        - List all templates");
             System.out.println("  jcli template add <path>   - Add custom template");
@@ -24,25 +41,23 @@ public class TemplateCommand implements CliCommand {
             return 0;
         }
 
-        String action = args[0];
-
         switch (action.toLowerCase()) {
             case "list":
                 listTemplates();
                 break;
             case "add":
-                if (args.length < 2) {
+                if (arg == null) {
                     Logger.error("Template path is required");
                     return 1;
                 }
-                addTemplate(args[1]);
+                addTemplate(arg);
                 break;
             case "remove":
-                if (args.length < 2) {
+                if (arg == null) {
                     Logger.error("Template name is required");
                     return 1;
                 }
-                removeTemplate(args[1]);
+                removeTemplate(arg);
                 break;
             default:
                 Logger.error("Unknown command: " + action);

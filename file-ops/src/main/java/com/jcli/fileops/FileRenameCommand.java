@@ -1,9 +1,9 @@
 package com.jcli.fileops;
 
 import com.jcli.core.CliCommand;
-import com.jcli.core.CommandLine;
-import com.jcli.core.CommandLineParser;
 import com.jcli.core.Logger;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -18,9 +18,48 @@ import java.util.regex.PatternSyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Command(name = "rename", description = "Batch rename files", mixinStandardHelpOptions = true)
 public class FileRenameCommand implements CliCommand {
-    // Reuse one scanner in non-console environments to avoid repeatedly allocating scanners.
     private static final Scanner INPUT_SCANNER = new Scanner(System.in);
+
+    @Option(names = {"-d", "--dir"}, description = "Directory to process", defaultValue = ".")
+    private String dir;
+
+    @Option(names = {"-p", "--pattern"}, description = "Pattern to match (regex)", required = true)
+    private String pattern;
+
+    @Option(names = {"-r", "--replace"}, description = "Replacement string", defaultValue = "")
+    private String replace;
+
+    @Option(names = {"-x", "--prefix"}, description = "Add prefix")
+    private String prefix;
+
+    @Option(names = {"-s", "--suffix"}, description = "Add suffix")
+    private String suffix;
+
+    @Option(names = {"-q", "--seq"}, description = "Add sequence number")
+    private boolean addSeq;
+
+    @Option(names = {"-n", "--seq-start"}, description = "Sequence start number", defaultValue = "1")
+    private String seqStartStr;
+
+    @Option(names = {"-f", "--format"}, description = "Number format: %d, %02d, %03d", defaultValue = "%d")
+    private String numberFormat;
+
+    @Option(names = {"-u", "--uppercase"}, description = "Convert to uppercase")
+    private boolean toUpper;
+
+    @Option(names = {"-l", "--lowercase"}, description = "Convert to lowercase")
+    private boolean toLower;
+
+    @Option(names = {"-y", "--dry-run"}, description = "Preview changes without executing")
+    private boolean dryRun;
+
+    @Option(names = {"-c", "--confirm"}, description = "Confirm before renaming")
+    private boolean confirm;
+
+    @Option(names = {"-v", "--verbose"}, description = "Verbose output")
+    private boolean verbose;
 
     @Override
     public String name() {
@@ -34,43 +73,11 @@ public class FileRenameCommand implements CliCommand {
 
     @Override
     public int execute(String[] args) throws Exception {
-        CommandLineParser parser = new CommandLineParser("jcli file rename")
-                .description("Batch rename files")
-                .addOption(CommandLineParser.Option.ofValue("d", "dir", "Directory to process"))
-                .addOption(CommandLineParser.Option.ofValue("p", "pattern", "Pattern to match (regex)"))
-                .addOption(CommandLineParser.Option.ofValue("r", "replace", "Replacement string"))
-                .addOption(CommandLineParser.Option.ofValue("x", "prefix", "Add prefix"))
-                .addOption(CommandLineParser.Option.ofValue("s", "suffix", "Add suffix"))
-                .addOption(CommandLineParser.Option.of("q", "seq", "Add sequence number"))
-                .addOption(CommandLineParser.Option.ofValue("n", "seq-start", "Sequence start number"))
-                .addOption(CommandLineParser.Option.ofValue("f", "format", "Number format: %d, %02d, %03d"))
-                .addOption(CommandLineParser.Option.of("u", "uppercase", "Convert to uppercase"))
-                .addOption(CommandLineParser.Option.of("l", "lowercase", "Convert to lowercase"))
-                .addOption(CommandLineParser.Option.of("y", "dry-run", "Preview changes without executing"))
-                .addOption(CommandLineParser.Option.of("c", "confirm", "Confirm before renaming"))
-                .addOption(CommandLineParser.Option.of("v", "verbose", "Verbose output"));
+        return new picocli.CommandLine(this).execute(args);
+    }
 
-        CommandLine cmdLine = parser.parse(args);
-
-        if (cmdLine.shouldShowHelp()) {
-            parser.printHelp();
-            return 0;
-        }
-
-        String dir = cmdLine.getOptionValue(parser.getLongOption("dir"), ".");
-        String pattern = cmdLine.getOptionValue(parser.getLongOption("pattern"));
-        String replace = cmdLine.getOptionValue(parser.getLongOption("replace"), "");
-        String prefix = cmdLine.getOptionValue(parser.getLongOption("prefix"));
-        String suffix = cmdLine.getOptionValue(parser.getLongOption("suffix"));
-        boolean addSeq = cmdLine.hasOption(parser.getShortOption("q"));
-        String seqStartStr = cmdLine.getOptionValue(parser.getLongOption("seq-start"), "1");
-        String numberFormat = cmdLine.getOptionValue(parser.getLongOption("format"), "%d");
-        boolean toUpper = cmdLine.hasOption(parser.getShortOption("u"));
-        boolean toLower = cmdLine.hasOption(parser.getShortOption("l"));
-        boolean dryRun = cmdLine.hasOption(parser.getShortOption("y"));
-        boolean confirm = cmdLine.hasOption(parser.getShortOption("c"));
-        boolean verbose = cmdLine.hasOption(parser.getShortOption("v"));
-
+    @Override
+    public Integer call() {
         if (verbose) {
             Logger.setVerbose(true);
         }
@@ -78,11 +85,6 @@ public class FileRenameCommand implements CliCommand {
         Path startDir = Paths.get(dir);
         if (!Files.exists(startDir)) {
             Logger.error("Directory does not exist: " + dir);
-            return 1;
-        }
-
-        if (pattern == null) {
-            Logger.error("Pattern is required");
             return 1;
         }
 
@@ -102,7 +104,6 @@ public class FileRenameCommand implements CliCommand {
             return 1;
         }
 
-        // Validate format eagerly to avoid failing in the middle of operation planning.
         try {
             String.format(numberFormat, seqStart);
         } catch (RuntimeException e) {
@@ -152,7 +153,6 @@ public class FileRenameCommand implements CliCommand {
                             newName = newName.toLowerCase();
                         }
 
-                        // Block path traversal and path separator injection in target file name.
                         if (newName.contains("/") || newName.contains("\\") || newName.equals(".") || newName.equals("..")) {
                             Logger.error("Unsafe target filename generated for " + oldName + ": " + newName);
                             hasUnsafeName.set(true);
@@ -163,6 +163,9 @@ public class FileRenameCommand implements CliCommand {
                             operations.add(new RenameOp(path, startDir.resolve(newName)));
                         }
                     });
+        } catch (IOException e) {
+            Logger.error("Failed to list directory: " + e.getMessage());
+            return 1;
         }
 
         if (hasUnsafeName.get()) {
@@ -247,5 +250,6 @@ public class FileRenameCommand implements CliCommand {
         return 0;
     }
 
-    record RenameOp(Path oldPath, Path newPath) {}
+    record RenameOp(Path oldPath, Path newPath) {
+    }
 }

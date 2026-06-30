@@ -1,9 +1,9 @@
 package com.jcli.fileops;
 
 import com.jcli.core.CliCommand;
-import com.jcli.core.CommandLine;
-import com.jcli.core.CommandLineParser;
 import com.jcli.core.Logger;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -15,7 +15,17 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
+@Command(name = "diff", description = "Compare directories", mixinStandardHelpOptions = true)
 public class FileDiffCommand implements CliCommand {
+    @Option(names = {"--dir1"}, description = "First directory", required = true)
+    private String dir1Str;
+
+    @Option(names = {"--dir2"}, description = "Second directory", required = true)
+    private String dir2Str;
+
+    @Option(names = {"-x", "--exclude"}, description = "Exclude pattern")
+    private String exclude;
+
     @Override
     public String name() {
         return "diff";
@@ -28,28 +38,11 @@ public class FileDiffCommand implements CliCommand {
 
     @Override
     public int execute(String[] args) throws Exception {
-        CommandLineParser parser = new CommandLineParser("jcli file diff")
-                .description("Compare two directories")
-                .addOption(CommandLineParser.Option.ofValue("d1", "dir1", "First directory"))
-                .addOption(CommandLineParser.Option.ofValue("d2", "dir2", "Second directory"))
-                .addOption(CommandLineParser.Option.ofValue("x", "exclude", "Exclude pattern"));
+        return new picocli.CommandLine(this).execute(args);
+    }
 
-        CommandLine cmdLine = parser.parse(args);
-
-        if (cmdLine.shouldShowHelp()) {
-            parser.printHelp();
-            return 0;
-        }
-
-        String dir1Str = cmdLine.getOptionValue(parser.getLongOption("dir1"));
-        String dir2Str = cmdLine.getOptionValue(parser.getLongOption("dir2"));
-        String exclude = cmdLine.getOptionValue(parser.getLongOption("exclude"));
-
-        if (dir1Str == null || dir2Str == null) {
-            Logger.error("Both directories are required");
-            return 1;
-        }
-
+    @Override
+    public Integer call() {
         Path dir1 = Paths.get(dir1Str);
         Path dir2 = Paths.get(dir2Str);
 
@@ -62,59 +55,64 @@ public class FileDiffCommand implements CliCommand {
         List<String> onlyInDir2 = new ArrayList<>();
         List<String> modified = new ArrayList<>();
 
-        Files.walkFileTree(dir1, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                if (exclude != null && file.toString().matches(exclude)) {
-                    return FileVisitResult.CONTINUE;
-                }
+        try {
+            Files.walkFileTree(dir1, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (exclude != null && file.toString().matches(exclude)) {
+                        return FileVisitResult.CONTINUE;
+                    }
 
-                Path relative = dir1.relativize(file);
-                Path target = dir2.resolve(relative);
+                    Path relative = dir1.relativize(file);
+                    Path target = dir2.resolve(relative);
 
-                if (!Files.exists(target)) {
-                    onlyInDir1.add(relative.toString());
-                } else {
-                    try {
-                        BasicFileAttributes targetAttrs = Files.readAttributes(target, BasicFileAttributes.class);
-                        if (!attrs.lastModifiedTime().equals(targetAttrs.lastModifiedTime())
-                                || attrs.size() != targetAttrs.size()) {
+                    if (!Files.exists(target)) {
+                        onlyInDir1.add(relative.toString());
+                    } else {
+                        try {
+                            BasicFileAttributes targetAttrs = Files.readAttributes(target, BasicFileAttributes.class);
+                            if (!attrs.lastModifiedTime().equals(targetAttrs.lastModifiedTime())
+                                    || attrs.size() != targetAttrs.size()) {
+                                modified.add(relative.toString());
+                            }
+                        } catch (IOException e) {
                             modified.add(relative.toString());
                         }
-                    } catch (IOException e) {
-                        modified.add(relative.toString());
                     }
-                }
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                return FileVisitResult.CONTINUE;
-            }
-        });
-
-        Files.walkFileTree(dir2, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                if (exclude != null && file.toString().matches(exclude)) {
                     return FileVisitResult.CONTINUE;
                 }
 
-                Path relative = dir2.relativize(file);
-                Path target = dir1.resolve(relative);
-
-                if (!Files.exists(target)) {
-                    onlyInDir2.add(relative.toString());
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                    return FileVisitResult.CONTINUE;
                 }
-                return FileVisitResult.CONTINUE;
-            }
+            });
 
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                return FileVisitResult.CONTINUE;
-            }
-        });
+            Files.walkFileTree(dir2, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (exclude != null && file.toString().matches(exclude)) {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    Path relative = dir2.relativize(file);
+                    Path target = dir1.resolve(relative);
+
+                    if (!Files.exists(target)) {
+                        onlyInDir2.add(relative.toString());
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            Logger.error("Failed to compare directories: " + e.getMessage());
+            return 1;
+        }
 
         if (!onlyInDir1.isEmpty()) {
             System.out.println("Only in " + dir1 + ":");

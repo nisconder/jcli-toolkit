@@ -1,9 +1,9 @@
 package com.jcli.fileops;
 
 import com.jcli.core.CliCommand;
-import com.jcli.core.CommandLine;
-import com.jcli.core.CommandLineParser;
 import com.jcli.core.Logger;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -11,7 +11,17 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Command(name = "stat", description = "Show statistics of directory", mixinStandardHelpOptions = true)
 public class FileStatCommand implements CliCommand {
+    @Option(names = {"-d", "--dir"}, description = "Directory to analyze", defaultValue = ".")
+    private String dir;
+
+    @Option(names = {"-o", "--output"}, description = "Output format: table, json", defaultValue = "table")
+    private String output;
+
+    @Option(names = {"-r", "--recursive"}, description = "Recursively analyze subdirectories")
+    private boolean recursive;
+
     @Override
     public String name() {
         return "stat";
@@ -24,32 +34,26 @@ public class FileStatCommand implements CliCommand {
 
     @Override
     public int execute(String[] args) throws Exception {
-        CommandLineParser parser = new CommandLineParser("jcli file stat")
-                .description("Show statistics of directory")
-                .addOption(CommandLineParser.Option.ofValue("d", "dir", "Directory to analyze"))
-                .addOption(CommandLineParser.Option.ofValue("o", "output", "Output format: table, json"))
-                .addOption(CommandLineParser.Option.of("r", "recursive", "Recursively analyze subdirectories"));
+        return new picocli.CommandLine(this).execute(args);
+    }
 
-        CommandLine cmdLine = parser.parse(args);
-
-        if (cmdLine.shouldShowHelp()) {
-            parser.printHelp();
-            return 0;
-        }
-
-        String dir = cmdLine.getOptionValue(parser.getLongOption("dir"), ".");
-        String output = cmdLine.getOptionValue(parser.getLongOption("output"), "table");
-        boolean recursive = cmdLine.hasOption(parser.getShortOption("r"));
-
+    @Override
+    public Integer call() {
         Path startDir = Paths.get(dir);
         if (!Files.exists(startDir)) {
             Logger.error("Directory does not exist: " + dir);
             return 1;
         }
 
-        DirStats stats = analyzeDirectory(startDir, recursive);
+        DirStats stats;
+        try {
+            stats = analyzeDirectory(startDir, recursive);
+        } catch (IOException e) {
+            Logger.error("Failed to analyze directory: " + e.getMessage());
+            return 1;
+        }
 
-        if (output.equals("json")) {
+        if ("json".equals(output)) {
             outputJson(stats);
         } else {
             outputTable(stats);
@@ -60,14 +64,14 @@ public class FileStatCommand implements CliCommand {
 
     private DirStats analyzeDirectory(Path dir, boolean recursive) throws IOException {
         DirStats stats = new DirStats();
-        
+
         if (recursive) {
             Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     stats.totalFiles++;
                     stats.totalSize += attrs.size();
-                    
+
                     String fileName = file.getFileName().toString();
                     int dotIndex = fileName.lastIndexOf('.');
                     if (dotIndex > 0) {
@@ -93,7 +97,7 @@ public class FileStatCommand implements CliCommand {
                             BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
                             stats.totalFiles++;
                             stats.totalSize += attrs.size();
-                            
+
                             String fileName = path.getFileName().toString();
                             int dotIndex = fileName.lastIndexOf('.');
                             if (dotIndex > 0) {
@@ -109,7 +113,7 @@ public class FileStatCommand implements CliCommand {
                 });
             }
         }
-        
+
         return stats;
     }
 
@@ -118,11 +122,11 @@ public class FileStatCommand implements CliCommand {
         System.out.println("Total Size: " + formatSize(stats.totalSize));
         System.out.println();
         System.out.println("By Extension:");
-        
+
         List<Map.Entry<String, Long>> sorted = stats.byExtension.entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .collect(Collectors.toList());
-        
+
         for (Map.Entry<String, Long> entry : sorted) {
             System.out.printf("  %-15s %6d files%n", entry.getKey(), entry.getValue());
         }
@@ -133,11 +137,11 @@ public class FileStatCommand implements CliCommand {
         sb.append("  \"totalFiles\": ").append(stats.totalFiles).append(",\n");
         sb.append("  \"totalSize\": ").append(stats.totalSize).append(",\n");
         sb.append("  \"byExtension\": {\n");
-        
+
         List<Map.Entry<String, Long>> sorted = stats.byExtension.entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .collect(Collectors.toList());
-        
+
         for (int i = 0; i < sorted.size(); i++) {
             Map.Entry<String, Long> entry = sorted.get(i);
             sb.append("    \"").append(entry.getKey()).append("\": ").append(entry.getValue());
@@ -146,7 +150,7 @@ public class FileStatCommand implements CliCommand {
             }
             sb.append("\n");
         }
-        
+
         sb.append("  }\n");
         sb.append("}");
         Logger.json(sb.toString());

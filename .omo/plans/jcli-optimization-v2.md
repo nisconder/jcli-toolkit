@@ -221,7 +221,7 @@ Wave 5: CI polish (1 todo)
     - Failure: wrong version → build fails (CI catches it)
   Commit: N (part of tasks 6/7 — batched commit with todo 7)
 
-- [ ] 6. Rewrite core module (CliCommand→Picocli bridge) and Main.java
+- [x] 6. Rewrite core module (CliCommand→Picocli bridge) and Main.java
   What to do / Must NOT do:
     - `Main.java`:
       - Remove static `commands`/`subcommands` maps and all registration
@@ -267,7 +267,7 @@ Wave 5: CI polish (1 todo)
     - Failure: `jcli` with no args shows help (not crash)
   Commit: N (batched with todo 7 — atomic with command rewrites)
 
-- [ ] 7. Rewrite all 10 commands with Picocli annotations + Gson JSON
+- [x] 7. Rewrite all 10 commands with Picocli annotations + Gson JSON
   What to do / Must NOT do:
     - Each command becomes `@Command(name=...) implements CliCommand, Runnable`
     - All options replaced with `@Option(names = {"-d", "--dir"})` fields

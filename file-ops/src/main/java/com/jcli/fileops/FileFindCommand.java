@@ -1,16 +1,44 @@
 package com.jcli.fileops;
 
 import com.jcli.core.CliCommand;
-import com.jcli.core.CommandLine;
-import com.jcli.core.CommandLineParser;
 import com.jcli.core.Logger;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
+@Command(name = "find", description = "Find files in directory", mixinStandardHelpOptions = true)
 public class FileFindCommand implements CliCommand {
+    @Option(names = {"-d", "--dir"}, description = "Directory to search", defaultValue = ".")
+    private String dir;
+
+    @Option(names = {"-e", "--ext"}, description = "File extension")
+    private String ext;
+
+    @Option(names = {"-n", "--name"}, description = "File name pattern")
+    private String namePattern;
+
+    @Option(names = {"-s", "--size-gt"}, description = "Size greater than (bytes)")
+    private String sizeGtStr;
+
+    @Option(names = {"-z", "--size-lt"}, description = "Size less than (bytes)")
+    private String sizeLtStr;
+
+    @Option(names = {"-t", "--newer"}, description = "Modified after (timestamp or days:7d)")
+    private String newerStr;
+
+    @Option(names = {"-o", "--output"}, description = "Output format: list, json, csv", defaultValue = "list")
+    private String output;
+
+    @Option(names = {"-p", "--depth"}, description = "Maximum recursion depth")
+    private String depthStr;
+
+    @Option(names = {"-v", "--verbose"}, description = "Show verbose output")
+    private boolean verbose;
+
     @Override
     public String name() {
         return "find";
@@ -23,35 +51,11 @@ public class FileFindCommand implements CliCommand {
 
     @Override
     public int execute(String[] args) throws Exception {
-        CommandLineParser parser = new CommandLineParser("jcli file find")
-                .description("Find files in directory recursively")
-                .addOption(CommandLineParser.Option.ofValue("d", "dir", "Directory to search"))
-                .addOption(CommandLineParser.Option.ofValue("e", "ext", "File extension"))
-                .addOption(CommandLineParser.Option.ofValue("n", "name", "File name pattern"))
-                .addOption(CommandLineParser.Option.ofValue("s", "size-gt", "Size greater than (bytes)"))
-                .addOption(CommandLineParser.Option.ofValue("z", "size-lt", "Size less than (bytes)"))
-                .addOption(CommandLineParser.Option.ofValue("t", "newer", "Modified after (timestamp or days:7d)"))
-                .addOption(CommandLineParser.Option.ofValue("o", "output", "Output format: list, json, csv"))
-                .addOption(CommandLineParser.Option.ofValue("p", "depth", "Maximum recursion depth"))
-                .addOption(CommandLineParser.Option.of("v", "verbose", "Show verbose output"));
+        return new picocli.CommandLine(this).execute(args);
+    }
 
-        CommandLine cmdLine = parser.parse(args);
-
-        if (cmdLine.shouldShowHelp()) {
-            parser.printHelp();
-            return 0;
-        }
-
-        String dir = cmdLine.getOptionValue(parser.getLongOption("dir"), ".");
-        String ext = cmdLine.getOptionValue(parser.getLongOption("ext"));
-        String namePattern = cmdLine.getOptionValue(parser.getLongOption("name"));
-        String sizeGtStr = cmdLine.getOptionValue(parser.getLongOption("size-gt"));
-        String sizeLtStr = cmdLine.getOptionValue(parser.getLongOption("size-lt"));
-        String newerStr = cmdLine.getOptionValue(parser.getLongOption("newer"));
-        String output = cmdLine.getOptionValue(parser.getLongOption("output"), "list");
-        String depthStr = cmdLine.getOptionValue(parser.getLongOption("depth"));
-        boolean verbose = cmdLine.hasOption(parser.getShortOption("v"));
-
+    @Override
+    public Integer call() {
         if (verbose) {
             Logger.setVerbose(true);
         }
@@ -69,7 +73,7 @@ public class FileFindCommand implements CliCommand {
             private int currentDepth = 0;
 
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+            public FileVisitResult preVisitDirectory(Path d, BasicFileAttributes attrs) {
                 currentDepth++;
                 if (currentDepth > maxDepth) {
                     currentDepth--;
@@ -79,14 +83,14 @@ public class FileFindCommand implements CliCommand {
             }
 
             @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+            public FileVisitResult postVisitDirectory(Path d, IOException exc) {
                 currentDepth--;
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                if (matches(file, attrs, ext, namePattern, sizeGtStr, sizeLtStr, newerStr)) {
+                if (matches(file, attrs)) {
                     results.add(new FileInfo(file, attrs));
                 }
                 return FileVisitResult.CONTINUE;
@@ -99,11 +103,16 @@ public class FileFindCommand implements CliCommand {
             }
         };
 
-        Files.walkFileTree(startDir, visitor);
+        try {
+            Files.walkFileTree(startDir, visitor);
+        } catch (IOException e) {
+            Logger.error("Failed to walk directory: " + e.getMessage());
+            return 1;
+        }
 
-        if (output.equals("json")) {
+        if ("json".equals(output)) {
             outputJson(results);
-        } else if (output.equals("csv")) {
+        } else if ("csv".equals(output)) {
             outputCsv(results);
         } else {
             outputList(results);
@@ -112,8 +121,7 @@ public class FileFindCommand implements CliCommand {
         return 0;
     }
 
-    private boolean matches(Path file, BasicFileAttributes attrs, String ext, String namePattern,
-                           String sizeGtStr, String sizeLtStr, String newerStr) {
+    private boolean matches(Path file, BasicFileAttributes attrs) {
         String fileName = file.getFileName().toString();
 
         if (ext != null) {
