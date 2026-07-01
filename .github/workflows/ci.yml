@@ -44,11 +44,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    - name: Set up GraalVM JDK 21
+    - name: Set up GraalVM JDK 17
       uses: graalvm/setup-graalvm@v1
       with:
-        java-version: '21'
-        distribution: 'graalvm-community'
+        java-version: '17.0.12'
+        distribution: 'graalvm'
         github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v4
