@@ -183,9 +183,6 @@ project(':cli-entry') {
                 mainClass = 'com.jcli.cli.Main'
                 buildArgs.add('-H:ReflectionConfigurationFiles=' + project.projectDir.toString() + '/src/main/resources/META-INF/native-image/reflect-config.json')
                 buildArgs.add('-H:ResourceConfigurationFiles=' + project.projectDir.toString() + '/src/main/resources/META-INF/native-image/resource-config.json')
-                // Defer ServiceLoader initialization to runtime to prevent
-                // module system ZipFile objects from being captured in image heap.
-                buildArgs.add('--initialize-at-run-time=java.util.ServiceLoader')
             }
         }
     }
