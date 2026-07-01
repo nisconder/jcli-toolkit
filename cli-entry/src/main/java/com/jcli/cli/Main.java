@@ -19,10 +19,7 @@ public class Main {
 
     private static final List<CliCommand> PLUGIN_COMMANDS = new ArrayList<>();
 
-    static {
-        createJcliDirectories();
-        loadPlugins();
-    }
+    private static boolean initialized = false;
 
     private Main() {
     }
@@ -75,6 +72,14 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        // Lazy-init: defer ServiceLoader to runtime so GraalVM Native Image
+        // does not capture ZipFile objects in the image heap during build.
+        if (!initialized) {
+            initialized = true;
+            createJcliDirectories();
+            loadPlugins();
+        }
+
         // Parse global options first
         for (String arg : args) {
             if (arg.equals("--verbose") || arg.equals("-v")) {

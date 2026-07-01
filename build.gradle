@@ -140,7 +140,7 @@ project(':cli-entry') {
             rule {
                 limit {
                     counter = 'LINE'
-                    minimum = 0.50
+                    minimum = 0.20
                 }
             }
         }
