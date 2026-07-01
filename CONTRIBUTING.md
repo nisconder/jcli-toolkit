@@ -34,7 +34,7 @@ cd jcli-toolkit
 
 ### 1. 创建新命令
 
-在相应的模块中实现 `CliCommand` 接口：
+在相应的模块中实现 `CliCommand` 和 `Callable<Integer>` 接口，使用 Picocli 注解：
 
 ```java
 package com.jcli.example;
@@ -44,8 +44,11 @@ import com.jcli.core.Logger;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(name = "example", description = "Example command")
-public class ExampleCommand implements CliCommand, Runnable {
+import java.util.concurrent.Callable;
+
+@Command(name = "example", description = "Example command",
+         mixinStandardHelpOptions = true)
+public class ExampleCommand implements CliCommand, Callable<Integer> {
     @Option(names = {"-v", "--verbose"}, description = "Verbose output")
     boolean verbose;
 
@@ -61,8 +64,12 @@ public class ExampleCommand implements CliCommand, Runnable {
     }
 
     @Override
-    public void run() {
-        // command logic
+    public Integer call() {
+        if (verbose) {
+            Logger.setVerbose(true);
+        }
+        Logger.info("Example command executed");
+        return 0;
     }
 }
 ```
@@ -74,13 +81,21 @@ public class ExampleCommand implements CliCommand, Runnable {
 ```java
 @Command(
     name = "jcli",
+    version = "JCLI Toolkit v1.0.0",
+    description = "Java CLI Toolkit for Developers",
     subcommands = {
-        // 现有命令...
+        FileCommand.class,
+        GenCommand.class,
+        TemplateCommand.class,
         ExampleCommand.class
-    }
+    },
+    mixinStandardHelpOptions = true
 )
 public class JcliCli implements Runnable {
-    // ...
+    @Override
+    public void run() {
+        CommandLine.usage(this, System.out);
+    }
 }
 ```
 
@@ -96,9 +111,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ExampleCommandTest {
     @Test
-    void testExecute() {
+    void testExecute() throws Exception {
         ExampleCommand cmd = new ExampleCommand();
-        int result = cmd.execute(new String[]{});
+        int result = cmd.execute(new String[]{"--help"});
         assertEquals(0, result);
     }
 }
@@ -109,7 +124,7 @@ class ExampleCommandTest {
 ### 插件结构
 
 1. 创建独立的 Gradle 项目
-2. 实现 `CliCommand` 接口
+2. 实现 `CliCommand` 和 `Callable<Integer>` 接口
 3. 创建服务注册文件
 
 ### 服务注册
@@ -136,7 +151,7 @@ cp build/libs/my-plugin-*.jar ~/.jcli/plugins/
 
 1. Fork 仓库
 2. 创建功能分支：`git checkout -b feature/my-feature`
-3. 提交更改：`git commit -m "Add my feature"`
+3. 提交更改：`git commit -m "feat: Add my feature"`
 4. 推送到分支：`git push origin feature/my-feature`
 5. 创建 Pull Request
 
@@ -159,6 +174,7 @@ refactor: improve command parsing logic
 - [ ] 更新了文档
 - [ ] 遵循代码风格指南
 - [ ] 提交信息清晰明确
+- [ ] Checkstyle 和 SpotBugs 警告为零
 
 ## 测试
 
@@ -174,11 +190,28 @@ refactor: improve command parsing logic
 ./gradlew jacocoTestReport
 ```
 
+覆盖率要求：所有模块 ≥70%（cli-entry ≥20%，因 Main.main() 调用 System.exit() 无法单元测试）。
+
+## 代码质量
+
+### 运行 Checkstyle
+
+```bash
+./gradlew checkstyleMain
+```
+
+### 运行 SpotBugs
+
+```bash
+./gradlew spotbugsMain
+```
+
 ## 文档
 
-- 在 `docs/` 目录下添加文档
+- 在 `docs/` 目录下更新或添加文档
 - 更新 README.md 如果涉及用户可见的更改
 - 添加 Javadoc 注释到公共 API
+- 更新 CHANGELOG.md
 
 ## 问题报告
 
@@ -201,7 +234,6 @@ refactor: improve command parsing logic
 
 - 查看 [文档](docs/)
 - 在 [GitHub Issues](https://github.com/nisconder/jcli-toolkit/issues) 中提问
-- 加入我们的讨论
 
 ## 许可证
 

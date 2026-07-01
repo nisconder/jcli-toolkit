@@ -5,10 +5,9 @@
 ## 1. 环境要求
 
 - JDK 17 或更高版本
-- Maven 3.8+（推荐）
-- Gradle 8+（可选）
+- Git
 
-说明：当前仓库未提交 gradlew/gradlew.bat 包装器，若本机无 Gradle，请优先使用 Maven。
+构建依赖由 Gradle Wrapper 自动下载，无需预装 Gradle。
 
 ## 2. 安装与运行
 
@@ -19,19 +18,17 @@ git clone https://github.com/nisconder/jcli-toolkit.git
 cd jcli-toolkit
 ```
 
-### 2.2 Maven 构建并运行
+### 2.2 构建并运行
 
 ```bash
-mvn clean package
-java -jar cli-entry/target/cli-entry-1.0.0.jar --help
+./gradlew shadowJar
+java -jar cli-entry/build/libs/cli-entry-all.jar --help
 ```
 
-如果本地产物名略有差异，请查看 `cli-entry/target` 目录，选择带主类清单的 JAR。
-
-### 2.3 Gradle 构建（可选）
+### 2.3 运行测试
 
 ```bash
-gradle clean build
+./gradlew test
 ```
 
 ## 3. 全局用法
@@ -82,7 +79,7 @@ jcli gen project --name demo-app --template maven-library --group com.demo
 
 - 0：成功（含 help、dry-run、无匹配等可接受结果）
 - 1：参数错误、路径不存在、业务检查失败、部分操作失败
-- 2：运行时异常（入口 Main 捕获异常后返回）
+- 2：Picocli 用法错误（缺少必填参数等）
 
 ## 6. 安全建议
 

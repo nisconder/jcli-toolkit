@@ -12,10 +12,13 @@
 
 ## 2. 找不到 gradlew
 
-当前仓库未提交 Gradle Wrapper。你可以：
+Gradle Wrapper 已随仓库提交。若克隆后缺少 gradlew/gradlew.bat，可能是 `.gitignore` 过滤导致。请检查是否正确克隆了完整仓库：
 
-- 直接使用 Maven：mvn clean package
-- 或在本机安装 Gradle 后执行 gradle build
+```bash
+git clone https://github.com/nisconder/jcli-toolkit.git
+cd jcli-toolkit
+./gradlew build
+```
 
 ## 3. Windows 正则转义问题
 
