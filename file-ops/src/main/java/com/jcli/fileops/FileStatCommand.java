@@ -2,6 +2,8 @@ package com.jcli.fileops;
 
 import com.jcli.core.CliCommand;
 import com.jcli.core.Logger;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -134,27 +136,8 @@ public class FileStatCommand implements CliCommand, Callable<Integer> {
     }
 
     private void outputJson(DirStats stats) {
-        StringBuilder sb = new StringBuilder("{\n");
-        sb.append("  \"totalFiles\": ").append(stats.totalFiles).append(",\n");
-        sb.append("  \"totalSize\": ").append(stats.totalSize).append(",\n");
-        sb.append("  \"byExtension\": {\n");
-
-        List<Map.Entry<String, Long>> sorted = stats.byExtension.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .collect(Collectors.toList());
-
-        for (int i = 0; i < sorted.size(); i++) {
-            Map.Entry<String, Long> entry = sorted.get(i);
-            sb.append("    \"").append(entry.getKey()).append("\": ").append(entry.getValue());
-            if (i < sorted.size() - 1) {
-                sb.append(",");
-            }
-            sb.append("\n");
-        }
-
-        sb.append("  }\n");
-        sb.append("}");
-        Logger.json(sb.toString());
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        Logger.json(gson.toJson(stats));
     }
 
     private String formatSize(long bytes) {

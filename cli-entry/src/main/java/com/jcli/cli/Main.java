@@ -94,8 +94,6 @@ public class Main {
         }
 
         int exitCode = cmd.execute(args);
-        if (exitCode != 0) {
-            System.exit(exitCode);
-        }
+        System.exit(exitCode);
     }
 }

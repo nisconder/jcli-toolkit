@@ -17,8 +17,6 @@ import java.util.concurrent.Callable;
 
 @Command(name = "sync", description = "Sync directories", mixinStandardHelpOptions = true)
 public class FileSyncCommand implements CliCommand, Callable<Integer> {
-    private static final Scanner INPUT_SCANNER = new Scanner(System.in);
-
     @Option(names = {"-s", "--source"}, description = "Source directory", required = true)
     private String sourceDir;
 
@@ -98,7 +96,9 @@ public class FileSyncCommand implements CliCommand, Callable<Integer> {
             if (System.console() != null) {
                 response = System.console().readLine();
             } else {
-                response = INPUT_SCANNER.nextLine();
+                try (Scanner scanner = new Scanner(System.in)) {
+                    response = scanner.nextLine();
+                }
             }
             if (!response.equalsIgnoreCase("y")) {
                 Logger.info("Cancelled");

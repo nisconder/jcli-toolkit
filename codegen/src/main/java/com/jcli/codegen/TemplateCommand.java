@@ -133,14 +133,16 @@ public class TemplateCommand implements CliCommand, Callable<Integer> {
             if (Files.isDirectory(source)) {
                 // Copy directory recursively
                 try (Stream<Path> walk = Files.walk(source)) {
-                    walk.forEach(src -> {
+                    java.util.Iterator<Path> it = walk.iterator();
+                    while (it.hasNext()) {
+                        Path src = it.next();
+                        Path dest = target.resolve(source.relativize(src));
                         try {
-                            Path dest = target.resolve(source.relativize(src));
                             Files.copy(src, dest, StandardCopyOption.COPY_ATTRIBUTES);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                        } catch (IOException ex) {
+                            Logger.error("Failed to copy: " + src + " - " + ex.getMessage());
                         }
-                    });
+                    }
                 }
             } else {
                 Files.copy(source, target);
@@ -164,14 +166,15 @@ public class TemplateCommand implements CliCommand, Callable<Integer> {
 
             if (Files.isDirectory(target)) {
                 try (Stream<Path> walk = Files.walk(target)) {
-                    walk.sorted(Comparator.reverseOrder())
-                        .forEach(path -> {
-                            try {
-                                Files.deleteIfExists(path);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
+                    java.util.Iterator<Path> it = walk.sorted(Comparator.reverseOrder()).iterator();
+                    while (it.hasNext()) {
+                        Path path = it.next();
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException e) {
+                            Logger.error("Failed to delete: " + path + " - " + e.getMessage());
+                        }
+                    }
                 }
             } else {
                 Files.deleteIfExists(target);

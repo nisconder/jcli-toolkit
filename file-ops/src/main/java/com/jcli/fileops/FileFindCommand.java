@@ -2,6 +2,8 @@ package com.jcli.fileops;
 
 import com.jcli.core.CliCommand;
 import com.jcli.core.Logger;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -193,21 +195,8 @@ public class FileFindCommand implements CliCommand, Callable<Integer> {
     }
 
     private void outputJson(List<FileInfo> results) {
-        StringBuilder sb = new StringBuilder("[\n");
-        for (int i = 0; i < results.size(); i++) {
-            FileInfo info = results.get(i);
-            sb.append("  {\n");
-            sb.append("    \"path\": \"").append(info.path()).append("\",\n");
-            sb.append("    \"size\": ").append(info.size()).append(",\n");
-            sb.append("    \"modified\": ").append(info.lastModified()).append("\n");
-            sb.append("  }");
-            if (i < results.size() - 1) {
-                sb.append(",");
-            }
-            sb.append("\n");
-        }
-        sb.append("]");
-        Logger.json(sb.toString());
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        Logger.json(gson.toJson(results));
     }
 
     private void outputCsv(List<FileInfo> results) {

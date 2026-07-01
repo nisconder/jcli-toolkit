@@ -21,8 +21,6 @@ import java.util.regex.Pattern;
 
 @Command(name = "rename", description = "Batch rename files", mixinStandardHelpOptions = true)
 public class FileRenameCommand implements CliCommand, Callable<Integer> {
-    private static final Scanner INPUT_SCANNER = new Scanner(System.in);
-
     @Option(names = {"-d", "--dir"}, description = "Directory to process", defaultValue = ".")
     private String dir;
 
@@ -222,7 +220,9 @@ public class FileRenameCommand implements CliCommand, Callable<Integer> {
             if (System.console() != null) {
                 response = System.console().readLine();
             } else {
-                response = INPUT_SCANNER.nextLine();
+                try (Scanner scanner = new Scanner(System.in)) {
+                    response = scanner.nextLine();
+                }
             }
             if (!response.equalsIgnoreCase("y")) {
                 Logger.info("Cancelled");

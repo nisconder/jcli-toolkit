@@ -24,27 +24,12 @@ jobs:
         java-version: ${{ matrix.java }}
         distribution: 'temurin'
 
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-
     - name: Set up Gradle
       uses: gradle/actions/setup-gradle@v4
 
     - name: Build with Gradle
-      run: ./gradlew clean build -x test --no-daemon --stacktrace
-
-    - name: Run tests
-      run: ./gradlew test --no-daemon --stacktrace
-
-    - name: Build shadow JAR
-      run: ./gradlew :cli-entry:shadowJar --no-daemon --stacktrace
+      run: ./gradlew clean build shadowJar --no-daemon --stacktrace
+      shell: bash
 
     - name: Upload shadow JAR
       uses: actions/upload-artifact@v4
@@ -64,13 +49,8 @@ jobs:
       with:
         java-version: 17
         distribution: 'graalvm'
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v4
     - name: Native compile
       run: ./gradlew :cli-entry:nativeCompile --no-daemon
     - name: Upload native binary
@@ -91,14 +71,7 @@ jobs:
       with:
         java-version: 17
         distribution: 'temurin'
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-    - name: Run Checkstyle
-      run: ./gradlew checkstyleMain --no-daemon
-    - name: Run SpotBugs
-      run: ./gradlew spotbugsMain --no-daemon
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@v4
+    - name: Run Checkstyle and SpotBugs
+      run: ./gradlew checkstyleMain spotbugsMain --no-daemon

@@ -17,6 +17,11 @@ import picocli.CommandLine;
  *
  * <p>All tests drive the command tree through {@link CommandLine#execute(String...)},
  * which returns the exit code directly without terminating the JVM.
+ *
+ * <p>{@link Main#main(String[])} is NOT tested here because it unconditionally
+ * calls {@link System#exit(int)} after {@code cmd.execute(args)}, which would
+ * terminate the test JVM. The core dispatch logic is tested via
+ * {@link CommandLine#execute(String...)} instead.
  */
 class MainTest {
 
@@ -154,36 +159,52 @@ class MainTest {
                 "gen parent command should print its banner");
     }
 
-    /**
-     * Drives {@link Main#main(String[])} with {@code --help}. In this codebase
-     * {@code Main.main} delegates to {@link CommandLine#execute(String...)} and returns
-     * normally (it does not terminate the JVM), so this is safe to invoke from a test.
-     */
     @Test
-    void testMainHelpViaEntryPoint() {
-        Main.main(new String[]{"--help"});
-        assertTrue(out().contains("Usage:"),
-                "Main.main(--help) should print usage output");
+    void testFileStatHelp() {
+        int exitCode = new CommandLine(new JcliCli()).execute("file", "stat", "--help");
+        assertEquals(0, exitCode, "file stat --help should exit with code 0");
+        assertTrue(out().contains("Usage:"), "help output should contain usage header");
     }
 
     @Test
-    void testMainNoArgsViaEntryPoint() {
-        Main.main(new String[]{});
-        assertTrue(out().contains("Usage:"),
-                "Main.main() with no args should print usage output");
+    void testFileRenameHelp() {
+        int exitCode = new CommandLine(new JcliCli()).execute("file", "rename", "--help");
+        assertEquals(0, exitCode, "file rename --help should exit with code 0");
+        assertTrue(out().contains("Usage:"), "help output should contain usage header");
     }
 
     @Test
-    void testMainVerboseFlagParsed() {
-        Main.main(new String[]{"--verbose", "--help"});
-        assertTrue(out().contains("Usage:"),
-                "Main.main(--verbose --help) should still print usage output");
+    void testFileSyncHelp() {
+        int exitCode = new CommandLine(new JcliCli()).execute("file", "sync", "--help");
+        assertEquals(0, exitCode, "file sync --help should exit with code 0");
+        assertTrue(out().contains("Usage:"), "help output should contain usage header");
     }
 
     @Test
-    void testMainQuietFlagParsed() {
-        Main.main(new String[]{"--quiet", "--help"});
-        assertTrue(out().contains("Usage:"),
-                "Main.main(--quiet --help) should still print usage output");
+    void testFileDiffHelp() {
+        int exitCode = new CommandLine(new JcliCli()).execute("file", "diff", "--help");
+        assertEquals(0, exitCode, "file diff --help should exit with code 0");
+        assertTrue(out().contains("Usage:"), "help output should contain usage header");
+    }
+
+    @Test
+    void testGenSnippetHelp() {
+        int exitCode = new CommandLine(new JcliCli()).execute("gen", "snippet", "--help");
+        assertEquals(0, exitCode, "gen snippet --help should exit with code 0");
+        assertTrue(out().contains("Usage:"), "help output should contain usage header");
+    }
+
+    @Test
+    void testFileCommandSubcommandDispatch() {
+        int exitCode = new CommandLine(new JcliCli())
+                .execute("file", "find", "--dir", ".", "--ext", "nonexistent-foobar");
+        assertEquals(0, exitCode, "file find dispatch should not crash");
+    }
+
+    @Test
+    void testGenClassDispatch() {
+        int exitCode = new CommandLine(new JcliCli())
+                .execute("gen", "class", "--name", "TestClass", "--out", "build");
+        assertEquals(0, exitCode, "gen class dispatch should not crash");
     }
 }

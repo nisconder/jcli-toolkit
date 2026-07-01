@@ -121,7 +121,7 @@ class FileFindCommandTest {
         assertTrue(out.trim().startsWith("["), "json output should start with [");
         assertTrue(out.contains("\"path\""), "json should contain path field");
         assertTrue(out.contains("\"size\""), "json should contain size field");
-        assertTrue(out.contains("\"modified\""), "json should contain modified field");
+        assertTrue(out.contains("\"lastModified\""), "json should contain lastModified field");
         assertTrue(out.contains("A.java"), "json should contain A.java path");
     }
 
