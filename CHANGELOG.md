@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation
 
 ### Planned
-- [ ] GraalVM native image support
 - [ ] More code templates
 - [ ] Complete unit test coverage
 - [ ] Performance optimizations

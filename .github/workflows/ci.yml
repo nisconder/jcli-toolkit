@@ -37,31 +37,6 @@ jobs:
         name: jcli-toolkit-jar
         path: cli-entry/build/libs/*.jar
 
-  native-build:
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    continue-on-error: true
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Set up GraalVM JDK 17
-      uses: graalvm/setup-graalvm@v1
-      with:
-        java-version: '17.0.12'
-        distribution: 'graalvm'
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Set up Gradle
-      uses: gradle/actions/setup-gradle@v4
-    - name: Native compile
-      run: ./gradlew :cli-entry:nativeCompile --no-daemon
-    - name: Upload native binary
-      if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: jcli-native-linux
-        path: cli-entry/build/native/nativeCompile/jcli
-
   lint:
     runs-on: ubuntu-latest
     needs: [build]
